@@ -20,7 +20,6 @@ int main() {
     constexpr int height {500};
     constexpr int width {900};
     const char* title {"Pong"};
-    
     Vector2 BallPosition {height/2.0, width/2.0};
     Vector2 BallSpeed {5.0f, 2.0f};
     Vector2 LeftBarPosition {10, 200};
@@ -34,8 +33,16 @@ int main() {
     GameScreen currentScreen = TITLE;
     InitWindow(width, height, title);
     SetTargetFPS(60);
+
+    SetConfigFlags(FLAG_MSAA_4X_HINT);  // NOTE: Try to enable MSAA 4X`
     InitAudioDevice();
+
     Music music = LoadMusicStream("resources/mini1111.xm");
+    music.looping = false;
+    float pitch = 1.0f;
+    PlayMusicStream(music);
+    PauseMusicStream(music);
+
     while (!WindowShouldClose()) {
         // Update Code
         UpdateMusicStream(music);
@@ -47,21 +54,23 @@ int main() {
                 }
              case GAMEPLAY: 
                 {
-                PlayMusicStream(music);
+
+                ResumeMusicStream(music);
                 BallPosition.x += BallSpeed.x;
                 BallPosition.y += BallSpeed.y;
-          
-
-                bool colCond1 { (BallPosition.x <= 20 + BallRadius) };
-                bool colCond2 { (BallPosition.y >= LeftBarPosition.y) && (BallPosition.y <= (LeftBarPosition.y + 100)) };
-
-                bool colCond3 { (BallPosition.x >= (880 - BallRadius)) };
-                bool colCond4 { (BallPosition.y >= RightBarPosition.y) && (BallPosition.y <= (RightBarPosition.y + 100)) };
-         
-                if (colCond1 && colCond2) BallSpeed.x *= -1.0f;
-                if (colCond3 && colCond4) BallSpeed.x *= -1.0f;
                 
-
+                if (CheckCollisionCircleRec(Vector2{BallPosition.x, BallPosition.y},
+                     BallRadius, 
+                     Rectangle{LeftBarPosition.x, LeftBarPosition.y, LeftBarSize.x, LeftBarSize.y})) 
+                {
+                    BallSpeed.x *= -1.0f;
+                }
+                if (CheckCollisionCircleRec(Vector2{BallPosition.x, BallPosition.y},
+                    BallRadius, 
+                    Rectangle{RightBarPosition.x, RightBarPosition.y, RightBarSize.x, RightBarSize.y})) 
+               {
+                   BallSpeed.x *= -1.0f;
+               }
                 if (((BallPosition.y) >= ((float)GetScreenHeight() - BallRadius)) || (BallPosition.y <= BallRadius))  BallSpeed.y *= -1.0f;
           
                 // Check for collision of Bar and Wall
@@ -116,6 +125,7 @@ int main() {
                         resetBars(LeftBarPosition, RightBarPosition);
                         resetBalls(BallPosition, BallSpeed);
                         currentScreen = GAMEPLAY;
+                        PlayMusicStream(music);
                     }
                     break;
                 }
